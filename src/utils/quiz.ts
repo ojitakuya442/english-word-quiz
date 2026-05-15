@@ -1,6 +1,8 @@
 import type { QuizChoice, QuizQuestion, WordEntry } from "../types";
 
 const CHOICE_KEYS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+export const CHOICE_COUNT_OPTIONS = [2, 3, 4, 5, 6, 7, 8] as const;
+export const DEFAULT_CHOICE_COUNT = 8;
 
 export type QuizBuildResult = {
   questions: QuizQuestion[];
@@ -38,10 +40,12 @@ const uniqueWordsByEntry = (words: WordEntry[]): WordEntry[] => {
 
 const buildChoices = (
   correctWord: WordEntry,
-  allWords: WordEntry[]
+  allWords: WordEntry[],
+  choiceCount: number
 ): QuizChoice[] | null => {
   const usedMeanings = new Set([correctWord.meaningJa]);
   const distractors: string[] = [];
+  const distractorCount = choiceCount - 1;
 
   for (const word of shuffle(allWords)) {
     if (word.entry === correctWord.entry || usedMeanings.has(word.meaningJa)) {
@@ -51,12 +55,12 @@ const buildChoices = (
     usedMeanings.add(word.meaningJa);
     distractors.push(word.meaningJa);
 
-    if (distractors.length === 7) {
+    if (distractors.length === distractorCount) {
       break;
     }
   }
 
-  if (distractors.length < 7) {
+  if (distractors.length < distractorCount) {
     return null;
   }
 
@@ -69,16 +73,21 @@ const buildChoices = (
   }));
 };
 
-export const canStartQuiz = (words: WordEntry[]): boolean =>
-  uniqueWordsByEntry(words).length >= 8 && uniqueMeaningCount(words) >= 8;
+export const canStartQuiz = (
+  words: WordEntry[],
+  choiceCount = DEFAULT_CHOICE_COUNT
+): boolean =>
+  uniqueWordsByEntry(words).length >= choiceCount &&
+  uniqueMeaningCount(words) >= choiceCount;
 
 export const buildQuiz = (
   words: WordEntry[],
-  requestedQuestionCount: number
+  requestedQuestionCount: number,
+  choiceCount = DEFAULT_CHOICE_COUNT
 ): QuizBuildResult => {
   const uniqueWords = uniqueWordsByEntry(words);
 
-  if (!canStartQuiz(uniqueWords)) {
+  if (!canStartQuiz(uniqueWords, choiceCount)) {
     throw new Error("有効な単語数または選択肢候補が8件未満のため開始できません。");
   }
 
@@ -86,7 +95,7 @@ export const buildQuiz = (
   const questions: QuizQuestion[] = [];
 
   for (const word of shuffle(uniqueWords)) {
-    const choices = buildChoices(word, uniqueWords);
+    const choices = buildChoices(word, uniqueWords, choiceCount);
     if (!choices) {
       continue;
     }

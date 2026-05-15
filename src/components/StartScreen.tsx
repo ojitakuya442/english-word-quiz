@@ -1,16 +1,18 @@
 import type { DatasetId, LoadedDataset } from "../types";
-import { canStartQuiz } from "../utils/quiz";
+import { CHOICE_COUNT_OPTIONS, canStartQuiz } from "../utils/quiz";
 
 type StartScreenProps = {
   datasets: LoadedDataset[];
   selectedDatasetId: DatasetId;
   selectedQuestionCount: number;
+  selectedChoiceCount: number;
   loading: boolean;
   error?: string;
   notice?: string;
   availableWords: number;
   onDatasetChange: (datasetId: DatasetId) => void;
   onQuestionCountChange: (count: number) => void;
+  onChoiceCountChange: (count: number) => void;
   onStart: () => void;
 };
 
@@ -20,19 +22,24 @@ export const StartScreen = ({
   datasets,
   selectedDatasetId,
   selectedQuestionCount,
+  selectedChoiceCount,
   loading,
   error,
   notice,
   availableWords,
   onDatasetChange,
   onQuestionCountChange,
+  onChoiceCountChange,
   onStart
 }: StartScreenProps) => {
   const selectedWords =
     selectedDatasetId === "all"
       ? datasets.flatMap((dataset) => dataset.words)
       : datasets.find((dataset) => dataset.id === selectedDatasetId)?.words ?? [];
-  const startDisabled = loading || Boolean(error) || !canStartQuiz(selectedWords);
+  const startDisabled =
+    loading ||
+    Boolean(error) ||
+    !canStartQuiz(selectedWords, selectedChoiceCount);
 
   return (
     <main className="screen start-screen">

@@ -10,7 +10,11 @@ import type {
   WrongAnswer
 } from "./types";
 import { loadDatasets } from "./utils/csv";
-import { buildQuiz } from "./utils/quiz";
+import {
+  buildQuiz,
+  CHOICE_COUNT_OPTIONS,
+  DEFAULT_CHOICE_COUNT
+} from "./utils/quiz";
 
 const DATASETS: DatasetConfig[] = [
   { id: "ngsl", label: "基礎英単語 NGSL", path: "/data/words-ngsl.csv" },
@@ -20,7 +24,8 @@ const DATASETS: DatasetConfig[] = [
 
 const STORAGE_KEYS = {
   datasetId: "english-word-quiz:last-dataset",
-  questionCount: "english-word-quiz:last-question-count"
+  questionCount: "english-word-quiz:last-question-count",
+  choiceCount: "english-word-quiz:last-choice-count"
 };
 
 type AppMode = "start" | "quiz" | "result";
@@ -35,6 +40,15 @@ const readInitialQuestionCount = (): number => {
   return [10, 20, 30, 50, 100, 200].includes(value) ? value : 10;
 };
 
+const readInitialChoiceCount = (): number => {
+  const value = Number(localStorage.getItem(STORAGE_KEYS.choiceCount));
+  return CHOICE_COUNT_OPTIONS.includes(
+    value as (typeof CHOICE_COUNT_OPTIONS)[number]
+  )
+    ? value
+    : DEFAULT_CHOICE_COUNT;
+};
+
 function App() {
   const [datasets, setDatasets] = useState<LoadedDataset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +58,9 @@ function App() {
     useState<DatasetId>(readInitialDatasetId);
   const [selectedQuestionCount, setSelectedQuestionCount] = useState(
     readInitialQuestionCount
+  );
+  const [selectedChoiceCount, setSelectedChoiceCount] = useState(
+    readInitialChoiceCount
   );
   const [mode, setMode] = useState<AppMode>("start");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -94,6 +111,10 @@ function App() {
     );
   }, [selectedQuestionCount]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.choiceCount, String(selectedChoiceCount));
+  }, [selectedChoiceCount]);
+
   const allWords = useMemo(
     () => datasets.flatMap((dataset) => dataset.words),
     [datasets]
@@ -113,7 +134,11 @@ function App() {
 
   const startQuiz = () => {
     try {
-      const result = buildQuiz(selectedWords, selectedQuestionCount);
+      const result = buildQuiz(
+        selectedWords,
+        selectedQuestionCount,
+        selectedChoiceCount
+      );
       setQuestions(result.questions);
       setNotice(result.notice);
       setCurrentIndex(0);
@@ -197,6 +222,7 @@ function App() {
       datasets={datasets}
       selectedDatasetId={selectedDatasetId}
       selectedQuestionCount={selectedQuestionCount}
+      selectedChoiceCount={selectedChoiceCount}
       loading={loading}
       error={error}
       notice={notice}
@@ -208,6 +234,11 @@ function App() {
       }}
       onQuestionCountChange={(count) => {
         setSelectedQuestionCount(count);
+        setNotice(undefined);
+        setError(undefined);
+      }}
+      onChoiceCountChange={(count) => {
+        setSelectedChoiceCount(count);
         setNotice(undefined);
         setError(undefined);
       }}
