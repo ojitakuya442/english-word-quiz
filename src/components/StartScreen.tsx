@@ -83,6 +83,21 @@ export const StartScreen = ({
           </select>
         </label>
 
+        <label className="field">
+          <span>選択肢数</span>
+          <select
+            value={selectedChoiceCount}
+            onChange={(event) => onChoiceCountChange(Number(event.target.value))}
+            disabled={loading}
+          >
+            {CHOICE_COUNT_OPTIONS.map((count) => (
+              <option key={count} value={count}>
+                {count}択
+              </option>
+            ))}
+          </select>
+        </label>
+
         <div className="meta-grid">
           <div>
             <span className="meta-label">読み込み済み</span>
@@ -97,9 +112,12 @@ export const StartScreen = ({
         {loading && <p className="status">CSVを読み込んでいます...</p>}
         {notice && <p className="status notice">{notice}</p>}
         {error && <p className="status error">{error}</p>}
-        {!loading && !error && selectedWords.length > 0 && !canStartQuiz(selectedWords) && (
+        {!loading &&
+          !error &&
+          selectedWords.length > 0 &&
+          !canStartQuiz(selectedWords, selectedChoiceCount) && (
           <p className="status error">
-            有効な単語数または選択肢候補が8件未満のため開始できません。
+            有効な単語数または選択肢候補が{selectedChoiceCount}件未満のため開始できません。
           </p>
         )}
 
